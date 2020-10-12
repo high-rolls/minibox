@@ -22,9 +22,8 @@ class PhoneNumber(models.Model):
     def __str__(self):
         return "+%s (%s) %s" % (self.country_code, self.area_code, self.local_number)
 
-# View/Download < Edit - More like a permission Level than a group of permissions
 
-
+# View < Download < Edit - More like a permission Level than a group of permissions
 class Permission(models.Model):
     description = models.CharField(max_length=20)
 

@@ -7,6 +7,11 @@ from miniboxapi import views
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
+router.register(r'phone_numbers', views.PhoneNumberViewSet)
+router.register(r'permissions', views.PermissionViewSet)
+router.register(r'companies', views.CompanyViewSet)
+router.register(r'profiles', views.ProfileViewSet)
+router.register(r'files', views.FileViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
