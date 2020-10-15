@@ -1,17 +1,19 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
+from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from pycpfcnpj import cpf, cnpj
 
 
 def validate_cnpj(value):
-    # TODO implement proper validation
-    return value
+    if not cnpj.validate(value):
+        raise ValidationError("%s is not a valid CNPJ number." % value)
 
 
 def validate_cpf(value):
-    # TODO implement proper validation
-    return value
+    if not cpf.validate(value):
+        raise ValidationError("%s is not a valid CPF number." % value)
 
 
 class PhoneNumber(models.Model):
@@ -21,14 +23,6 @@ class PhoneNumber(models.Model):
 
     def __str__(self):
         return "+%s (%s) %s" % (self.country_code, self.area_code, self.local_number)
-
-
-# View < Download < Edit - More like a permission Level than a group of permissions
-class Permission(models.Model):
-    description = models.CharField(max_length=20)
-
-    def __str__(self):
-        return self.description
 
 
 class Company(models.Model):
@@ -53,9 +47,10 @@ class Profile(models.Model):
         PhoneNumber, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
-        return "%s (%s)" % (self.user.username, self.user.email)
+        return "%s at %s" % (self.user.username, self.company.trade_name)
 
 
+"""
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -65,6 +60,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+"""
 
 
 class File(models.Model):
@@ -80,10 +76,11 @@ class File(models.Model):
         return s
 
 
-class FileAccess(models.Model):
+class UserFilePermission(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
+    permission = models.ForeignKey(
+        Permission, on_delete=models.CASCADE)
 
     def __str__(self):
         return "%s can %s %s." % (self.user, str(self.permission).lower(), self.file)

@@ -1,15 +1,22 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from miniboxapi.models import *
 from rest_framework import viewsets
 from rest_framework import permissions
 from miniboxapi.serializers import *
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     # API endpoint that allows users to be viewed or edited
-    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return User.objects.all().order_by('-date_joined')
+        else:
+            return User.objects.filter(profile__company=user.profile.company)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -19,15 +26,21 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class PhoneNumberViewSet(viewsets.ModelViewSet):
-    queryset = PhoneNumber.objects.all()
-    serializer_class = PhoneNumberSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
 class PermissionViewSet(viewsets.ModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ContentTypeViewSet(viewsets.ModelViewSet):
+    queryset = ContentType.objects.all()
+    serializer_class = ContentTypeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class PhoneNumberViewSet(viewsets.ModelViewSet):
+    queryset = PhoneNumber.objects.all()
+    serializer_class = PhoneNumberSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
@@ -38,9 +51,14 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        u = self.request.user
+        if u.is_superuser:
+            return Profile.objects.all()
+        return Profile.objects.filter(company=u.profile.company)
 
 
 class FileViewSet(viewsets.ModelViewSet):
@@ -49,7 +67,7 @@ class FileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class FileAccessViewSet(viewsets.ModelViewSet):
-    queryset = FileAccess.objects.all()
-    serializer_class = FileAccessSerializer
+class UserFilePermissionViewSet(viewsets.ModelViewSet):
+    queryset = UserFilePermission.objects.all()
+    serializer_class = UserFilePermissionSerializer
     permission_classes = [permissions.IsAuthenticated]
