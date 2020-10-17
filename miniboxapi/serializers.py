@@ -55,9 +55,9 @@ class ProfileSerializer(serializers.HyperlinkedModelSerializer):
         company_data = validated_data.pop('company')
         cpf = validated_data.pop('cpf')
         phone_number_data = validated_data.pop('phone_number')
-        user = UserSerializer.update_or_create(
+        user = UserSerializer.create(
             UserSerializer(), validated_data=user_data)
-        phone_number = PhoneNumberSerializer.update_or_create(
+        phone_number = PhoneNumberSerializer.create(
             PhoneNumberSerializer(), validated_data=phone_number_data)
         profile, created = Profile.objects.update_or_create(
             user=user, company=company_data, cpf=cpf, phone_number=phone_number)
