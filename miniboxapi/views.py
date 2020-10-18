@@ -4,12 +4,13 @@ from miniboxapi.models import *
 from rest_framework import viewsets
 from rest_framework import permissions
 from miniboxapi.serializers import *
+from miniboxapi.permissions import *
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     # API endpoint that allows users to be viewed or edited
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminOrCompanyAdmin]
 
     def get_queryset(self):
         user = self.request.user
@@ -52,13 +53,18 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrCompanyAdmin]
 
     def get_queryset(self):
         u = self.request.user
         if u.is_superuser:
             return Profile.objects.all()
         return Profile.objects.filter(company=u.profile.company)
+
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return ProfileSerializer
+        return CompanyAdminProfileSerializer
 
 
 class FileViewSet(viewsets.ModelViewSet):

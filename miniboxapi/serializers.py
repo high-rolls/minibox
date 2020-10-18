@@ -76,6 +76,17 @@ class ProfileSerializer(serializers.HyperlinkedModelSerializer):
         return profile
 
 
+class CompanyAdminProfileSerializer(ProfileSerializer):
+    class Meta:
+        model = Profile
+        fields = ['url', 'user', 'cpf', 'phone_number']
+
+    def create(self, validated_data):
+        # request.user.profile.company would be nice, but I can't accesss the request from here
+        validated_data['company'] =
+        return super.create(self, validated_data)
+
+
 class FileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = File
