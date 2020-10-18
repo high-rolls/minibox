@@ -10,54 +10,55 @@ from miniboxapi.permissions import *
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     # API endpoint that allows users to be viewed or edited
     serializer_class = UserSerializer
-    permission_classes = [IsAdminOrCompanyAdmin]
+    permission_classes = [IsCompanyAdministrator | permissions.IsAdminUser]
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser:
-            return User.objects.all().order_by('-date_joined')
+        if user.is_staff:
+            return User.objects.all()
         else:
             return User.objects.filter(profile__company=user.profile.company)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
     # API endpoint that allows users to be viewed or edited
+    # TODO allow companies to create its own groups
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class ContentTypeViewSet(viewsets.ModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class PhoneNumberViewSet(viewsets.ModelViewSet):
     queryset = PhoneNumber.objects.all()
     serializer_class = PhoneNumberSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
-    permission_classes = [IsAdminOrCompanyAdmin]
+    permission_classes = [IsCompanyAdministrator | permissions.IsAdminUser]
 
     def get_queryset(self):
         u = self.request.user
-        if u.is_superuser:
+        if u.is_staff:
             return Profile.objects.all()
         return Profile.objects.filter(company=u.profile.company)
 
@@ -66,14 +67,39 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return ProfileSerializer
         return CompanyAdminProfileSerializer
 
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            serializer.save(company=self.request.user.profile.company)
+        else:
+            serializer.save()
+
 
 class FileViewSet(viewsets.ModelViewSet):
     queryset = File.objects.all()
     serializer_class = FileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        u = self.request.user
+        if u.is_staff:
+            return File.objects.all()
+        return File.objects.filter(company=u.profile.company)
+
+    def get_serializer_class(self):
+        u = self.request.user
+        if u.is_staff:
+            return FileSerializer
+        return CompanyFileSerializer
+
+    def perform_create(self, serializer):
+        u = self.request.user
+        if u.is_staff:
+            serializer.save()
+        else:  # company admin or regular user
+            serializer.save(company=u.profile.company)
+
 
 class UserFilePermissionViewSet(viewsets.ModelViewSet):
     queryset = UserFilePermission.objects.all()
     serializer_class = UserFilePermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser | IsCompanyAdministrator]
