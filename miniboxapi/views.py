@@ -86,8 +86,12 @@ class FileViewSet(viewsets.ModelViewSet):
             if company is not None:
                 queryset = queryset.filter(company=company)
         else:
+<<<<<<< HEAD
             queryset = queryset.filter(
                 company=self.request.user.profile.company)
+=======
+            queryset = queryset.filter(company=self.request.user.company)
+>>>>>>> d1f49bb5eb7e94ad007ec2e1c3a3365c1d07890e
 
         path = self.request.query_params.get('path', None)
         if path is not None:
