@@ -12,7 +12,7 @@ router.register(r'permissions', views.PermissionViewSet)
 router.register(r'content_types', views.ContentTypeViewSet)
 router.register(r'companies', views.CompanyViewSet)
 router.register(r'profiles', views.ProfileViewSet, basename='profile')
-router.register(r'files', views.FileViewSet)
+router.register(r'files', views.FileViewSet, basename='file')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

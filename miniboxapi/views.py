@@ -75,15 +75,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
 class FileViewSet(viewsets.ModelViewSet):
-    queryset = File.objects.all()
     serializer_class = FileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        u = self.request.user
-        if u.is_staff:
-            return File.objects.all()
-        return File.objects.filter(company=u.profile.company)
+        user = self.request.user
+        queryset = File.objects.all()
+        if user.is_staff:
+            company = self.request.query_params.get('company', None)
+            if company is not None:
+                queryset = queryset.filter(company=company)
+        else:
+            queryset = queryset.filter(
+                company=self.request.user.profile.company)
+
+        path = self.request.query_params.get('path', None)
+        if path is not None:
+            queryset = queryset.filter(path=path)
+        return queryset.order_by('company', '-is_directory', 'path', 'name')
 
     def get_serializer_class(self):
         u = self.request.user
