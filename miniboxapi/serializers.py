@@ -87,11 +87,29 @@ class FileSerializer(serializers.HyperlinkedModelSerializer):
         model = File
         fields = ['url', 'company', 'name', 'path', 'is_directory']
 
+    def validate(self, data):
+        # check for unique trio
+        if File.objects.filter(
+            company=data['company'],
+            name=data['name'],
+            path=data['path']
+        ).exists():
+            raise serializers.ValidationError(
+                "File with the same full path already exists in this company.")
+
 
 class CompanyFileSerializer(FileSerializer):
     class Meta:
         model = File
         fields = ['url', 'name', 'path', 'is_directory']
+
+    def validate(self, data):
+        if File.objects.filter(
+            name=data['name'],
+            path=data['path']
+        ).exists():
+            raise serializers.ValidationError(
+                "File with the same full name already exists!")
 
 
 class UserFilePermissionSerializer(serializers.HyperlinkedModelSerializer):
