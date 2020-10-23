@@ -1,3 +1,5 @@
+from django.db.models import Value as V
+from django.db.models.functions import Concat
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from miniboxapi.models import *
@@ -67,8 +69,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
             # unidecode removes accents
             request_q = unidecode.unidecode(
                 request_q).lower()
+            queryset = queryset.annotate(full_name=Concat(
+                'user__first_name', V(' '), 'user__last_name'))
             qnames = queryset.filter(
-                user__first_name__istartswith=request_q)
+                full_name__istartswith=request_q)
             qcpf = queryset.filter(cpf__startswith=request_q)
             queryset = qnames.union(qcpf)
         return queryset
