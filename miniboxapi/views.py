@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from miniboxapi.serializers import *
 from miniboxapi.permissions import *
+import unidecode
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -21,7 +22,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
-    # API endpoint that allows users to be viewed or edited
+    # API endpoint that allows groups to be viewed or edited
     # TODO allow companies to create its own groups
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
@@ -53,14 +54,24 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    serializer_class = ProfileSerializer
     permission_classes = [IsCompanyAdministrator | permissions.IsAdminUser]
 
     def get_queryset(self):
-        u = self.request.user
-        if u.is_staff:
-            return Profile.objects.all()
-        return Profile.objects.filter(company=u.profile.company)
+        user = self.request.user
+        queryset = Profile.objects.all()
+        if not user.is_staff:
+            queryset = queryset.filter(company=user.profile.company)
+
+        request_q = self.request.query_params.get('q', None)
+        if request_q is not None:
+            # unidecode removes accents
+            request_q = unidecode.unidecode(
+                request_q).lower()
+            qnames = queryset.filter(
+                user__first_name__istartswith=request_q)
+            qcpf = queryset.filter(cpf__startswith=request_q)
+            queryset = qnames.union(qcpf)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.user.is_staff:
@@ -75,7 +86,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
 class FileViewSet(viewsets.ModelViewSet):
-    serializer_class = FileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -86,12 +96,8 @@ class FileViewSet(viewsets.ModelViewSet):
             if company is not None:
                 queryset = queryset.filter(company=company)
         else:
-<<<<<<< HEAD
             queryset = queryset.filter(
                 company=self.request.user.profile.company)
-=======
-            queryset = queryset.filter(company=self.request.user.company)
->>>>>>> d1f49bb5eb7e94ad007ec2e1c3a3365c1d07890e
 
         path = self.request.query_params.get('path', None)
         if path is not None:
