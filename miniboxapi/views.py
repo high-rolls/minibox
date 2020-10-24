@@ -5,6 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from miniboxapi.models import *
 from rest_framework import viewsets
 from rest_framework import permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from miniboxapi.serializers import *
 from miniboxapi.permissions import *
 import unidecode
@@ -88,6 +90,28 @@ class ProfileViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
+    @action(detail=True)
+    def files(self, request, pk=None):
+        file_permissions = UserFilePermission.objects.filter(
+            user=self.get_object().user).order_by('file__path', 'file__name')
+        files = []
+        for file_permission in file_permissions:
+            file = FileSerializer(file_permission.file, context={
+                                  'request': request}).data
+            files.append(file)
+        return Response(files)
+
+    @action(detail=True)
+    def file_permissions(self, request, pk=None):
+        file_permissions = UserFilePermission.objects.filter(
+            user=self.get_object().user)
+        objects = []
+        context = {'request': request}
+        for fp in file_permissions:
+            ufp = UserFilePermissionSerializer(fp, context=context).data
+            objects.append(ufp)
+        return Response(objects)
+
 
 class FileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -120,6 +144,24 @@ class FileViewSet(viewsets.ModelViewSet):
             serializer.save()
         else:  # company admin or regular user
             serializer.save(company=u.profile.company)
+
+    @action(detail=True)
+    def permissions(self, request, pk=None):
+        queryset = UserFilePermission.objects.filter(file=self.get_object(
+        )).order_by('user__first_name', 'user__last_name', 'permission__name')
+        objects = []
+        for item in queryset:
+            ufp = UserFilePermissionSerializer(
+                item, context={'request': request}).data
+            objects.append(ufp)
+        return Response(objects)
+
+
+class FilePermissionViewSet(viewsets.ModelViewSet):
+    queryset = Permission.objects.filter(
+        content_type__app_label='minibox', content_type__model='file')
+    serializer_class = FilePermissionSerializer
+    permission_classes = [permissions.IsAdminUser | IsCompanyAdministrator]
 
 
 class UserFilePermissionViewSet(viewsets.ModelViewSet):

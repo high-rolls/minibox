@@ -15,7 +15,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
-        fields = ['url', 'name']
+        fields = ['url', 'name', 'permissions']
 
 
 class PermissionSerializer(serializers.HyperlinkedModelSerializer):
@@ -112,7 +112,13 @@ class CompanyFileSerializer(FileSerializer):
                 "File with the same full name already exists!")
 
 
+class FilePermissionSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ['url', 'name', 'content_type']
+
+
 class UserFilePermissionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = UserFilePermission
-        fields = ['url', 'file', 'user', 'permission']
+        fields = ['url', 'user', 'file', 'permission']

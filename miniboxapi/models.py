@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, Group
 from django.core.exceptions import ValidationError
 from django.db.models import UniqueConstraint
 from django.db.models.signals import post_save
@@ -77,12 +77,23 @@ class File(models.Model):
                 fields=['company', 'name', 'path']
             )
         ]
+        permissions = [('can_view', 'Can view file'),
+                       ('can_download', 'Can download file')]
 
     def __str__(self):
         s = "%s/%s" % (self.path, self.name)
         if self.is_directory:
             s += '/'
         return s
+
+
+class GroupFilePermission(models.Model):
+    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "Group %s can %s %s" % (self.group, self.permission.lower(), self.file)
 
 
 class UserFilePermission(models.Model):
